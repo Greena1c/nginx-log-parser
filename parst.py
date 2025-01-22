@@ -86,7 +86,7 @@ with open(log_file, "r") as file:
         filtered_rows.append(row)
 
 if not args.status_range and not args.date and not args.sort_by:
-    print("Запуск без фільтрації: всі рядки додаються до результату")
+    print("Запуск без фільтрації")
     filtered_rows = all_rows
 
 if args.sort_by:
