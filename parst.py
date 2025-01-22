@@ -52,7 +52,6 @@ with open(log_file, "r") as file:
     for line in file:
         match = re.match(pattern, line)
         if match:
-            print(f"Знайдено рядок: {line}")
             row = {
                 'IP': match.group(1),
                 'Timestamp': match.group(2),
@@ -71,19 +70,27 @@ with open(log_file, "r") as file:
             }
             all_rows.append(row)
 
-            status = int(row['Status'])
             if status_min is not None and status_max is not None:
-                print(f"Перевіряємо статус: {status} у діапазоні {status_min}-{status_max}")
+                status = int(row['Status'])
                 if not (status_min <= status <= status_max):
                     continue
 
-            log_date = datetime.strptime(row['Timestamp'].split(':')[0], "%d/%b/%Y")
             if filter_date:
-                print(f"Перевіряємо дату: {log_date.date()} == {filter_date.date()}")
+                log_date = datetime.strptime(row['Timestamp'].split(':')[0], "%d/%b/%Y")
                 if log_date.date() != filter_date.date():
                     continue
 
             filtered_rows.append(row)
+
+if not args.status_range and not args.date and not args.sort_by:
+    print("Запуск без фільтрації: всі рядки додаються до результату")
+    filtered_rows = all_rows
+
+if args.sort_by:
+    filtered_rows.sort(
+        key=lambda x: int(x[args.sort_by]) if x[args.sort_by].isdigit() else x[args.sort_by],
+        reverse=(args.sort_order == "desc")
+    )
 
 print(f"Усі рядки: {len(all_rows)}")
 print(f"Фільтровані рядки: {len(filtered_rows)}")
