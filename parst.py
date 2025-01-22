@@ -23,7 +23,7 @@ def push_to_git():
 
 parser = argparse.ArgumentParser(description="Парсинг логів Nginx із фільтрацією та сортуванням")
 parser.add_argument('--status-range', type=str, help='Діапазон HTTP-статусів, наприклад, "400-500"')
-parser.add_argument('--date', type=str, help='Фільтр за датою у форматі "DD/MM/YYYY", наприклад, "26/06/2024"')
+parser.add_argument('--date', type=str, help='Фільтр за датою у форматі "DD/MM/YYYY", наприклад, "26/04/2021"')
 parser.add_argument('--sort-by', type=str, help='Поле для сортування (наприклад, "Status", "Size")')
 parser.add_argument('--sort-order', type=str, choices=['asc', 'desc'], default='asc', help='Порядок сортування (asc/desc)')
 args = parser.parse_args()
@@ -51,36 +51,39 @@ filtered_rows = []
 with open(log_file, "r") as file:
     for line in file:
         match = re.match(pattern, line)
-        if match:
-            row = {
-                'IP': match.group(1),
-                'Timestamp': match.group(2),
-                'Request': match.group(3),
-                'Status': match.group(4),
-                'Size': match.group(5),
-                'Referrer': match.group(6),
-                'User-Agent': match.group(7),
-                'Bytes Sent': match.group(8),
-                'Request Time': match.group(9),
-                'Backend Server': match.group(10),
-                'Backend Response Bytes': match.group(11),
-                'Backend Response Time': match.group(12),
-                'Backend Status': match.group(13),
-                'Hash': match.group(14),
-            }
-            all_rows.append(row)
+        if not match:
+            print(f"Не вдалося зіставити рядок: {line}")
+            continue
 
-            if status_min is not None and status_max is not None:
-                status = int(row['Status'])
-                if not (status_min <= status <= status_max):
-                    continue
+        row = {
+            'IP': match.group(1),
+            'Timestamp': match.group(2),
+            'Request': match.group(3),
+            'Status': match.group(4),
+            'Size': match.group(5),
+            'Referrer': match.group(6),
+            'User-Agent': match.group(7),
+            'Bytes Sent': match.group(8),
+            'Request Time': match.group(9),
+            'Backend Server': match.group(10),
+            'Backend Response Bytes': match.group(11),
+            'Backend Response Time': match.group(12),
+            'Backend Status': match.group(13),
+            'Hash': match.group(14),
+        }
+        all_rows.append(row)
 
-            if filter_date:
-                log_date = datetime.strptime(row['Timestamp'].split(':')[0], "%d/%b/%Y")
-                if log_date.date() != filter_date.date():
-                    continue
+        if status_min is not None and status_max is not None:
+            status = int(row['Status'])
+            if not (status_min <= status <= status_max):
+                continue
 
-            filtered_rows.append(row)
+        if filter_date:
+            log_date = datetime.strptime(row['Timestamp'].split(':')[0], "%d/%b/%Y")
+            if log_date.date() != filter_date.date():
+                continue
+
+        filtered_rows.append(row)
 
 if not args.status_range and not args.date and not args.sort_by:
     print("Запуск без фільтрації: всі рядки додаються до результату")
