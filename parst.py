@@ -96,7 +96,7 @@ if args.sort_by:
     )
 
 print(f"Усі рядки: {len(all_rows)}")
-print(f"Фільтровані рядки: {len(filtered_rows)}")
+print(f"Фільтровані рядки після фільтрації: {len(filtered_rows)}")
 
 with open(all_logs_csv, "w", newline="") as csvfile:
     fieldnames = list(all_rows[0].keys())
@@ -105,8 +105,12 @@ with open(all_logs_csv, "w", newline="") as csvfile:
     writer.writerows(all_rows)
 
 with open(filtered_logs_csv, "w", newline="") as csvfile:
+    fieldnames = list(all_rows[0].keys())
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
-    writer.writerows(filtered_rows if filtered_rows else all_rows)
+    if filtered_rows:
+        writer.writerows(filtered_rows)
+    else:
+        print("Немає результатів для запису у filtered_logs.csv")
 
 push_to_git()
