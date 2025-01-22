@@ -2,28 +2,52 @@ import re
 import csv
 import subprocess
 import argparse
+from datetime import datetime
 
 log_file = "nginx.log"
 output_csv = "output.csv"
 
 pattern = r'(\d+\.\d+\.\d+\.\d+) - - \[(.*?)\] "(.*?)" (\d+) (\d+) "(.*?)" "(.*?)" (\d+) (\d+\.\d+) \[.*?\] \[\] (\d+\.\d+\.\d+\.\d+:\d+) (\d+) (\d+\.\d+) (\d+) (.*)'
 
-def push_to_git(file_path):
+def push_to_git():
+    """
+    Додає всі файли у Git, створює коміт і пушить у віддалений репозиторій.
+    """
     try:
         subprocess.run(["git", "add", "."], check=True)
-        print(f"File {file_path} added to git")
-        subprocess.run(["git", "commit", "-m", "Commit:1.2.0"], check=True)
+        print("All files added to git")
+        
+        subprocess.run(["git", "commit", "-m", "Updated project files"], check=True)
         print("Commit created")
+        
         subprocess.run(["git", "push", "origin", "main"], check=True)
-        print("Pushed to git")
+        print("Changes pushed to GitHub")
     except subprocess.CalledProcessError as e:
         print(f"An error occurred: {e}")
 
 parser = argparse.ArgumentParser(description="Парсинг логів Nginx із фільтрацією")
-parser.add_argument('--filter-status', type=str, help='Фільтр за HTTP-статусом (наприклад, 200)')
+parser.add_argument('--status-range', type=str, help='Діапазон HTTP-статусів, наприклад, "400-500"')
+parser.add_argument('--date', type=str, help='Фільтр за датою у форматі "DD/MM/YYYY", наприклад, "26/06/2024"')
 args = parser.parse_args()
 
-print(f"Значення фільтра статусу: {args.filter_status}")
+print(f"Діапазон статусів: {args.status_range}")
+print(f"Фільтр за датою: {args.date}")
+
+status_min, status_max = None, None
+if args.status_range:
+    try:
+        status_min, status_max = map(int, args.status_range.split('-'))
+    except ValueError:
+        print("Неправильний формат діапазону статусів. Використовуйте формат '400-500'.")
+        exit(1)
+
+filter_date = None
+if args.date:
+    try:
+        filter_date = datetime.strptime(args.date, "%d/%m/%Y")
+    except ValueError:
+        print("Неправильний формат дати. Використовуйте формат 'DD/MM/YYYY'.")
+        exit(1)
 
 with open(output_csv, "w", newline="") as csvfile:
     fieldnames = [
@@ -57,9 +81,15 @@ with open(output_csv, "w", newline="") as csvfile:
                     'Hash': match.group(14),
                 }
 
-                if args.filter_status and row['Status'] != args.filter_status:
+                status = int(row['Status'])
+                if status_min is not None and status_max is not None:
+                    if not (status_min <= status <= status_max):
+                        continue
+
+                log_date = datetime.strptime(row['Timestamp'].split(':')[0], "%d/%b/%Y")
+                if filter_date and log_date.date() != filter_date.date():
                     continue
-                
+
                 writer.writerow(row)
 
-push_to_git(output_csv)
+push_to_git()
