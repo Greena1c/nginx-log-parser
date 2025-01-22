@@ -52,6 +52,7 @@ with open(log_file, "r") as file:
     for line in file:
         match = re.match(pattern, line)
         if match:
+            print(f"Знайдено рядок: {line}")
             row = {
                 'IP': match.group(1),
                 'Timestamp': match.group(2),
@@ -72,14 +73,20 @@ with open(log_file, "r") as file:
 
             status = int(row['Status'])
             if status_min is not None and status_max is not None:
+                print(f"Перевіряємо статус: {status} у діапазоні {status_min}-{status_max}")
                 if not (status_min <= status <= status_max):
                     continue
 
             log_date = datetime.strptime(row['Timestamp'].split(':')[0], "%d/%b/%Y")
-            if filter_date and log_date.date() != filter_date.date():
-                continue
+            if filter_date:
+                print(f"Перевіряємо дату: {log_date.date()} == {filter_date.date()}")
+                if log_date.date() != filter_date.date():
+                    continue
 
             filtered_rows.append(row)
+
+print(f"Усі рядки: {len(all_rows)}")
+print(f"Фільтровані рядки: {len(filtered_rows)}")
 
 with open(all_logs_csv, "w", newline="") as csvfile:
     fieldnames = list(all_rows[0].keys())
