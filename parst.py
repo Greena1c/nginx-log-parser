@@ -14,7 +14,7 @@ def push_to_git():
     try:
         subprocess.run(["git", "add", "."], check=True)
         print("All files added to git")
-        subprocess.run(["git", "commit", "-m", "Updated logs"], check=True)
+        subprocess.run(["git", "commit", "-m", "Updated logs", "--allow-empty"], check=True)
         print("Commit created")
         subprocess.run(["git", "push", "origin", "main"], check=True)
         print("Changes pushed to GitHub")
